@@ -5,12 +5,10 @@ services:
     build:
       context: ./
       dockerfile: Dockerfile
-    image: ghcr.io/yasir-khalid/tradovate-price-scraper:latest
+    image: ghcr.io/yasir-khalid/tradovate-price-streaming:latest
     platform: linux/amd64
     container_name: tradovate-price-streamer
     restart: always
-    depends_on:
-      - redis
     env_file:
       - .env
     networks:

@@ -6,7 +6,7 @@ from loguru import logger
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
 from playwright.sync_api import Error as PlaywrightError
-from pricestream.client import get_redis_client
+from client import get_redis_client
 import os
 from datetime import date, datetime, time, timedelta
 from functools import wraps
@@ -14,7 +14,8 @@ from time import time as timer
 
 
 logger.remove()
-logger.add(sys.stdout, level="INFO")
+LOGGING_LEVEL = os.getenv("LOGGING_LEVEL", "DEBUG")
+logger.add(sys.stdout, level=LOGGING_LEVEL)
 
 # Define credentials
 TRADOVATE_USERNAME = os.getenv("TRADOVATE_USERNAME")
@@ -55,10 +56,11 @@ def login(page):
     try:
         launch_button_selector = "button.MuiButtonBase-root.MuiButton-root"
         logger.info("Clicking on `Launch` to navigate to price stream")
+        page.wait_for_selector(launch_button_selector, timeout=60000)  # Wait for Launch button
         page.click(launch_button_selector)
         page.wait_for_timeout(5000)
-    except Exception as e:
-        logger.warning(f"Launch button not found or error occurred: {e}")
+    except PlaywrightTimeoutError:
+        logger.warning("`Launch` button not found or error occurred.")
 
 
 @timeit
@@ -117,7 +119,7 @@ from playwright.sync_api import sync_playwright, Error as PlaywrightError
 )
 def run():
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
+        browser = p.chromium.launch(headless=False)
         context = browser.new_context()
         page = context.new_page()
         try:
